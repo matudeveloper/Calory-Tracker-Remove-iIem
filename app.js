@@ -20,6 +20,35 @@ const StorageCtrl = (function (){
                 localStorage.setItem('items', JSON.stringify(items));
             }
         },
+        removeLsItem: function(item){
+
+            let items;
+            const UISelectors = UICtrl.getSelectors();
+            //thenum = item.replace( /^\D+/g, '');
+
+            itemList = document.querySelector(UISelectors.itemList)
+            if(localStorage.getItem('items') === null )
+            {
+                items = [];
+            } else
+            {
+                items = JSON.parse(localStorage.getItem('items'));
+            }
+            items.forEach(function (itemList, index, value)
+            {
+
+
+                if(item === value[index].name)
+                {
+                    items.splice(index, 1);
+                    //console.log('item has been removed');
+                }
+            });
+
+            localStorage.setItem('items', JSON.stringify(items));
+
+
+        },
         getItemsFromStorage: function (){
             let items;
             if(localStorage.getItem('items') === null){
@@ -89,9 +118,35 @@ const ItemCtrl = (function(){
             });
             //set total calories in data structure
             data.total = total;
-            console.log(data.total)
+            //console.log(data.total)
             //return total
             return data.total;
+        },
+        removeItem: function(element){
+
+            const UISelectors = UICtrl.getSelectors();
+            const itemList = document.querySelector(UISelectors.itemList)
+
+            const numArray = [];
+            element.remove();
+
+
+
+                itemList.querySelectorAll('.collection-item').forEach(function (item, key) {
+                    total = item.querySelector('em').textContent.replace(/^\D+/g, '');
+                    numArray.push(parseInt(total));
+                    //console.log(total)
+
+                });
+                const actualCalories = numArray.reduce(function (acc, val) {
+                    return acc + val;
+                }, 0)
+                UICtrl.showTotalCalories(actualCalories);
+                //console.log();
+
+
+
+
         },
         logData: function(){
             return data
@@ -105,7 +160,9 @@ const UICtrl = (function() {
         itemNameInput: '#item-name',
         itemCaloriesInput: '#item-calories',
         addBtn: '.add-btn',
-        totalCalories: '.total-calories'
+        totalCalories: '.total-calories',
+        deleteBtn: '.delete-btn',
+        updateBtn: '.update-btn'
     }
     return{
         populateItemList: function(items){
@@ -115,7 +172,7 @@ const UICtrl = (function() {
             //parse data and create list items html
             items.forEach(function (item) {
                 html += `<li class="collection-item" id="item-${item.id}">
-        <strong>${item.name}: </strong> <em>${item.calories} Calories</em>
+        <strong>${item.name}</strong> <em>${item.calories} Calories</em>
         <a href="#" class="secondary-content">
             <i class="fas fa-pencil-alt"></i>
         </a>
@@ -167,12 +224,49 @@ const App = (function(ItemCtrl,StorageCtrl, UICtrl){
     const loadEventListeners = function (){
         //get UI selectors
         const UISelectors = UICtrl.getSelectors();
+
         //console.log(UISelectors)
         //add item event
         document.querySelector(UISelectors.addBtn).addEventListener('click', itemAddSubmit);
+        //remove item event
+        document.querySelector(UISelectors.itemList).addEventListener('click', itemsRemove);
+        //console.log(document.querySelector(UISelectors.deleteBtn));
         //ad document reload event
         document.addEventListener('DOMContentLoaded', getItemsFromStorage)
     }
+
+
+    //item remove function
+    const itemsRemove = function(event){
+        //get form input UI Controller
+
+        //const input = UICtrl.getItemInput();
+        const UISelectors = UICtrl.getSelectors();
+
+        const deleteBtn = document.querySelector(UISelectors.deleteBtn);
+        let itemTag = event.target.parentNode.parentElement;
+        let itemName = event.target.parentNode.parentElement.querySelector('strong').textContent;
+
+        const items = StorageCtrl.getItemsFromStorage()
+
+
+
+        document.querySelector(UISelectors.updateBtn).style.visibility = "visible";
+        deleteBtn.style.visibility = "visible";
+
+        deleteBtn.onclick = function() {
+            ItemCtrl.removeItem(itemTag);
+            StorageCtrl.removeLsItem(itemName);
+
+
+        }
+
+
+        event.preventDefault();
+        //event.stopImmediatePropagation();
+    }
+
+
     //item add submit function
     const itemAddSubmit = function(event){
         //get form input UI Controller
