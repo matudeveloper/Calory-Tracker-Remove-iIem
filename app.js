@@ -20,13 +20,10 @@ const StorageCtrl = (function (){
                 localStorage.setItem('items', JSON.stringify(items));
             }
         },
-        removeLsItem: function(item){
+        removeLsItem: function(item, cal){
 
-            let items;
-            const UISelectors = UICtrl.getSelectors();
-            //thenum = item.replace( /^\D+/g, '');
+            //let items;
 
-            itemList = document.querySelector(UISelectors.itemList)
             if(localStorage.getItem('items') === null )
             {
                 items = [];
@@ -36,12 +33,13 @@ const StorageCtrl = (function (){
             }
             items.forEach(function (itemList, index, value)
             {
+                let parseCal = parseInt(cal)
 
-
-                if(item === value[index].name)
+                console.log(item + parseCal )
+                if(item === value[index].name && value[index].calories === parseCal  )
                 {
                     items.splice(index, 1);
-                    //console.log('item has been removed');
+                    console.log(item);
                 }
             });
 
@@ -124,25 +122,13 @@ const ItemCtrl = (function(){
         },
         removeItem: function(element){
 
-            const UISelectors = UICtrl.getSelectors();
-            const itemList = document.querySelector(UISelectors.itemList)
 
-            const numArray = [];
+
+
             element.remove();
 
 
 
-                itemList.querySelectorAll('.collection-item').forEach(function (item, key) {
-                    total = item.querySelector('em').textContent.replace(/^\D+/g, '');
-                    numArray.push(parseInt(total));
-                    //console.log(total)
-
-                });
-                const actualCalories = numArray.reduce(function (acc, val) {
-                    return acc + val;
-                }, 0)
-                UICtrl.showTotalCalories(actualCalories);
-                //console.log();
 
 
 
@@ -240,15 +226,15 @@ const App = (function(ItemCtrl,StorageCtrl, UICtrl){
     const itemsRemove = function(event){
         //get form input UI Controller
 
-        //const input = UICtrl.getItemInput();
-        const UISelectors = UICtrl.getSelectors();
+        let input = UICtrl.getItemInput();
+        let UISelectors = UICtrl.getSelectors();
 
-        const deleteBtn = document.querySelector(UISelectors.deleteBtn);
+        let deleteBtn = document.querySelector(UISelectors.deleteBtn);
         let itemTag = event.target.parentNode.parentElement;
         let itemName = event.target.parentNode.parentElement.querySelector('strong').textContent;
-
-        const items = StorageCtrl.getItemsFromStorage()
-
+        let itemCal = event.target.parentNode.parentElement.querySelector('em').textContent;
+        let numArray = [0];
+        let itemsS = StorageCtrl.getItemsFromStorage()
 
 
         document.querySelector(UISelectors.updateBtn).style.visibility = "visible";
@@ -256,11 +242,28 @@ const App = (function(ItemCtrl,StorageCtrl, UICtrl){
 
         deleteBtn.onclick = function() {
             ItemCtrl.removeItem(itemTag);
-            StorageCtrl.removeLsItem(itemName);
+            StorageCtrl.removeLsItem(itemName, itemCal);
+
+
+            const itemList = document.querySelector(UISelectors.itemList)
+            if ( itemList !== null){
+                itemList.querySelectorAll('.collection-item').forEach(function (item, key) {
+                    total = item.querySelector('em').textContent.replace(/^\D+/g, '');
+                    numArray.push(parseInt(total));
+                    //console.log(total)
+
+                });
+
+                var totals = 0;
+                for (var i in numArray) {
+                    totals += numArray[i];
+                }
+                UICtrl.showTotalCalories(totals);
+
+            }
 
 
         }
-
 
         event.preventDefault();
         //event.stopImmediatePropagation();
@@ -271,7 +274,7 @@ const App = (function(ItemCtrl,StorageCtrl, UICtrl){
     const itemAddSubmit = function(event){
         //get form input UI Controller
         const input = UICtrl.getItemInput()
-        // console.log(input)
+        //console.log(input)
         //check for name and calorie input
         if(input.name !== '' && input.calories !== ''){
             const newItem = ItemCtrl.addItem(input.name, input.calories)
