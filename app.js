@@ -22,28 +22,36 @@ const StorageCtrl = (function (){
         },
         removeLsItem: function(item, cal){
 
-            //let items;
-
-            if(localStorage.getItem('items') === null )
-            {
+            let items;
+            //check if any item in LS
+            if(localStorage.getItem('items') === null){
                 items = [];
-            } else
-            {
+
+                //set LS
+                localStorage.setItem('items', JSON.stringify(items));
+            } else {
+                //get what is already in ls
                 items = JSON.parse(localStorage.getItem('items'));
-            }
-            items.forEach(function (itemList, index, value)
-            {
-                let parseCal = parseInt(cal)
-
-                console.log(item + parseCal )
-                if(item === value[index].name && value[index].calories === parseCal  )
+                //push new item
+                items.forEach(function (itemList,  index, value)
                 {
-                    items.splice(index, 1);
-                    console.log(item);
-                }
-            });
 
-            localStorage.setItem('items', JSON.stringify(items));
+
+                    //console.log( value[index]);
+                    //console.log('===========================');
+                    //console.log( item);
+                    //console.log(item.name === value[indeparseInt(x].name || item.calories === value[index].calories);
+                    if(item.name === value[index].name && parseInt(item.calories) === parseInt(value[index].calories)  )
+                    {
+                        items.splice(index, 1);
+                        //console.log( item);
+
+                    }
+                });
+            }
+                //reset LS
+                localStorage.setItem('items', JSON.stringify(items));
+
 
 
         },
@@ -120,18 +128,32 @@ const ItemCtrl = (function(){
             //return total
             return data.total;
         },
+        //total calories
+        calcTotalCalories: function(cal){
+            totals = 0;
+            calcArray = []
+            data.items.forEach(function(item, index){
+                if(item.calories === parseInt(cal)) {
+                    data.items.splice(index, 1);
+
+                }
+                //console.log(total)
+            });
+
+            data.items.forEach(function(item, index){
+                calcArray.push(item.calories)
+                //console.log(total)
+            });
+            for (var i in calcArray) {
+                totals += calcArray[i];
+            }
+            //console.log(totals);
+            return totals;
+
+        },
         removeItem: function(element){
 
-
-
-
             element.remove();
-
-
-
-
-
-
 
         },
         logData: function(){
@@ -177,6 +199,31 @@ const UICtrl = (function() {
                 calories: document.querySelector(UISelectors.itemCaloriesInput).value
             }
         },
+        getListItems: function (element, calories){
+            let UISelectors = UICtrl.getSelectors();
+            let itemsS = StorageCtrl.getItemsFromStorage()
+            let selectedItem = '';
+            let itemReplace = element.replace(/:/g, '')
+
+
+
+                itemsS.forEach(function ( item) {
+
+
+                    if (item.name === itemReplace && item.calories === parseInt(calories) )
+                    {
+
+                        selectedItem = item
+
+
+                    }
+
+                });
+                return selectedItem
+
+
+
+        },
         addListItem: function (item){
             //create li element
             const li = document.createElement('li');
@@ -185,7 +232,7 @@ const UICtrl = (function() {
             //add ID
             li.id = `item-${item.id}`;
             //add HTML
-            li.innerHTML = `<strong>${item.name}: </strong>
+            li.innerHTML = `<strong>${item.name}:</strong>
             <em>${item.calories} Calories</em>
             <a href="#" class="secondary-content">
                 <i class="edit-item fas fa-pencil-alt"></i>
@@ -215,59 +262,48 @@ const App = (function(ItemCtrl,StorageCtrl, UICtrl){
         //add item event
         document.querySelector(UISelectors.addBtn).addEventListener('click', itemAddSubmit);
         //remove item event
-        document.querySelector(UISelectors.itemList).addEventListener('click', itemsRemove);
+        document.querySelector(UISelectors.itemList).addEventListener('click', selectedItem);
         //console.log(document.querySelector(UISelectors.deleteBtn));
+
         //ad document reload event
         document.addEventListener('DOMContentLoaded', getItemsFromStorage)
     }
 
 
     //item remove function
-    const itemsRemove = function(event){
-        //get form input UI Controller
+    const selectedItem = function(event){
 
-        let input = UICtrl.getItemInput();
         let UISelectors = UICtrl.getSelectors();
 
         let deleteBtn = document.querySelector(UISelectors.deleteBtn);
         let itemTag = event.target.parentNode.parentElement;
         let itemName = event.target.parentNode.parentElement.querySelector('strong').textContent;
         let itemCal = event.target.parentNode.parentElement.querySelector('em').textContent;
-        let numArray = [0];
-        let itemsS = StorageCtrl.getItemsFromStorage()
-
+        let LSItem = UICtrl.getListItems(itemName, itemCal)
 
         document.querySelector(UISelectors.updateBtn).style.visibility = "visible";
         deleteBtn.style.visibility = "visible";
 
-        deleteBtn.onclick = function() {
+        deleteBtn.addEventListener('click', event => {
+            event.preventDefault();
+            //event.stopImmediatePropagation();
             ItemCtrl.removeItem(itemTag);
-            StorageCtrl.removeLsItem(itemName, itemCal);
+            StorageCtrl.removeLsItem(LSItem, itemCal);
+            //get total calories
+            if( itemCal.length !== 0 ) {
+                let totalCalories = ItemCtrl.calcTotalCalories(itemCal);
 
-
-            const itemList = document.querySelector(UISelectors.itemList)
-            if ( itemList !== null){
-                itemList.querySelectorAll('.collection-item').forEach(function (item, key) {
-                    total = item.querySelector('em').textContent.replace(/^\D+/g, '');
-                    numArray.push(parseInt(total));
-                    //console.log(total)
-
-                });
-
-                var totals = 0;
-                for (var i in numArray) {
-                    totals += numArray[i];
-                }
-                UICtrl.showTotalCalories(totals);
-
+                UICtrl.showTotalCalories(totalCalories);
             }
 
+            event.preventDefault();
 
-        }
-
+        });
         event.preventDefault();
         //event.stopImmediatePropagation();
     }
+
+
 
 
     //item add submit function
